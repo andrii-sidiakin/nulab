@@ -15,8 +15,7 @@ endif()
 add_subdirectory(libs/nulib)
 
 add_subdirectory(apps/bclib)
-add_subdirectory(apps/btcp)
-add_subdirectory(apps/mine)
+add_subdirectory(apps/bcapp)
 
 if(NULIB_ENABLE_TESTING)
     add_subdirectory(tests)
