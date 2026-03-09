@@ -1,0 +1,10 @@
+#include "nulib/assert.h"
+
+nulib_stmt_check_failure_handler_t nulib_default_assert_failure_handler =
+    _nulib_stmt_check_failure_print_report_and_abort;
+
+nulib_stmt_check_failure_handler_t nulib_default_expect_failure_handler =
+    _nulib_stmt_check_failure_print_report_and_exit;
+
+nulib_stmt_check_failure_handler_t nulib_default_ensure_failure_handler =
+    _nulib_stmt_check_failure_print_report_and_exit;

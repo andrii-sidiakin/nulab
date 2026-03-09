@@ -1,0 +1,14 @@
+---
+
+FormatStyle: 'file'
+
+Checks:
+  -*,
+  readability-*,
+  performance-*,
+  portability-*,
+  -readability-identifier-length,
+  -readability-redundant-access-specifiers
+
+CheckOptions:
+  readability-function-cognitive-complexity.IgnoreMacros: true

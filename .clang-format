@@ -1,0 +1,15 @@
+---
+#BasedOnStyle: LLVM
+---
+#Language: C
+IndentWidth: 4
+ColumnLimit: 80
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: InlineOnly
+BreakBeforeBraces: Custom
+BraceWrapping:
+  BeforeElse: true
+  BeforeCatch: true
+---
+
