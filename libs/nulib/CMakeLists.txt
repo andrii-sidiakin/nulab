@@ -14,8 +14,11 @@ target_compile_options(nu PRIVATE
 target_compile_options(nu PRIVATE
     $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>
     $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>
+    $<$<C_COMPILER_ID:MSVC>:/W4>
 
-    $<$<CONFIG:Release>:-Werror>
+    $<$<AND:$<C_COMPILER_ID:GNU>,$<CONFIG:Release>>:-Werror>
+    $<$<AND:$<C_COMPILER_ID:Clang>,$<CONFIG:Release>>:-Werror>
+    $<$<AND:$<C_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/WX>
 )
 
 if(NULIB_ENABLE_COVERAGE)
