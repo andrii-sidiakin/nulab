@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <threads.h>
 #include <time.h>
 
 typedef nu_G_dca(bc_tx_view_t) tx_view_dca_t;

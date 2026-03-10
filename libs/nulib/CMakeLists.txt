@@ -5,7 +5,11 @@ target_include_directories(
   nu PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:include>)
 
-target_compile_options(nu PRIVATE -std=c99)
+target_compile_options(nu PRIVATE 
+    $<$<C_COMPILER_ID:GNU>:-std=c99>
+    $<$<C_COMPILER_ID:Clang>:-std=c99>
+    $<$<C_COMPILER_ID:MSVC>:/std:clatest>
+)
 
 target_compile_options(nu PRIVATE
     $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>

@@ -4,9 +4,7 @@
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // C std version
 
-#ifndef __STDC_VERSION__
-#error "Expect '__STDC_VERSION__' defined."
-#endif
+#if defined(__STDC_VERSION__)
 
 #if __STDC_VERSION__ >= 199001L
 #define NULIB_SUPPORTS_C99
@@ -22,6 +20,14 @@
 
 #if __STDC_VERSION__ >= 202311L
 #define NULIB_SUPPORT_C23
+#endif
+
+#else
+
+#if defined(__STDC__)
+#define NULIB_SUPPORT_C90
+#endif
+
 #endif
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -40,7 +46,11 @@
 #ifdef NULIB_SUPPORTS_C23
 #define nu_alignof alignof
 #else
+#if defined(_MSC_VER)
+#define nu_alignof __alignof
+#else
 #define nu_alignof __alignof__
+#endif
 #endif
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -49,7 +59,11 @@
 #ifdef NULIB_SUPPORTS_C23
 #define nu_typeof typeof
 #else
+#if defined(_MSC_VER)
 #define nu_typeof __typeof__
+#else
+#define nu_typeof __typeof__
+#endif
 #endif
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -58,7 +72,7 @@
 #ifdef NULIB_SUPPORTS_C23
 #define nu_constexpr constexpr
 #else
-#define nu_constexpr static const
+#define nu_constexpr const
 #endif
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -73,5 +87,17 @@
 #define NULIB_NoReturn
 #define NULIB_MaybeUnused
 #endif
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//
+
+#if __has_include(<stdckdint.h>)
+#define NULIB_HAS_CKD_OPS
+#include <stdckdint.h>
+#else 
+// TODO: provide ckd ops
+#endif
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 #endif

@@ -1,6 +1,6 @@
 #include "bc_hex.h"
 
-static constexpr char HexChars[16] = {
+static nu_constexpr char HexChars[16] = {
     '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
 };

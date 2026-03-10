@@ -6,6 +6,9 @@
 # block_solver
 add_executable(block_solver main_block_solver.c)
 target_link_libraries(block_solver PRIVATE bclib)
+target_compile_options(block_solver
+    PUBLIC $<$<C_COMPILER_ID:MSVC>:/std:c11 /experimental:c11atomics>
+)
 
 # block_template_parser
 add_executable(block_template_parser main_block_template_parser.c)

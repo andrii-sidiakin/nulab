@@ -1,6 +1,8 @@
 #ifndef _SHA256_H_INCLUDED_
 #define _SHA256_H_INCLUDED_
 
+#include <nulib/preset.h>
+
 #include <stdint.h>
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -12,7 +14,7 @@ enum {
     // Sha256_BlockSizeBits = 512,
 };
 
-static constexpr uint32_t Sha256_K[Sha256_BlockSize] = {
+static nu_constexpr uint32_t Sha256_K[Sha256_BlockSize] = {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
     0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
     0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
@@ -26,7 +28,7 @@ static constexpr uint32_t Sha256_K[Sha256_BlockSize] = {
     0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 };
 
-static constexpr uint32_t Sha256_H0[Sha256_HashSizeDWord] = {
+static nu_constexpr uint32_t Sha256_H0[Sha256_HashSizeDWord] = {
     0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
     0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
 };

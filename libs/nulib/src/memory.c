@@ -1,7 +1,6 @@
 #include "nulib/memory.h"
 #include "nulib/assert.h"
 
-#include <stdckdint.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,9 +49,13 @@ nu_memory_t *nu_memory_set_default(nu_memory_t *m) {
 
 void *nu_calloc(size_t c, size_t nb) {
     size_t n = 0;
+#ifdef NULIB_HAS_CKD_OPS
     if (!nu_expect(!ckd_mul(&n, c, nb))) {
         return NULL;
     }
+#else
+    n = c * nb;
+#endif
 
     void *ptr = nu_malloc(n);
     if (ptr) {

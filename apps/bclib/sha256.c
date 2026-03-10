@@ -2,12 +2,15 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <stdint.h>
 #include <string.h>
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+#ifdef _MSC_VER
+#define SHA256_ALWAYS_INLINE static inline __forceinline
+#else
 #define SHA256_ALWAYS_INLINE static inline __attribute__((always_inline))
+#endif
 
 SHA256_ALWAYS_INLINE uint32_t shl(uint32_t x, uint32_t n) {
     return x << (31 & n);
@@ -17,7 +20,7 @@ SHA256_ALWAYS_INLINE uint32_t shr(uint32_t x, uint32_t n) {
     return x >> (31 & n);
 }
 
-[[maybe_unused]] SHA256_ALWAYS_INLINE uint32_t rtl(uint32_t x, uint32_t n) {
+NULIB_MaybeUnused SHA256_ALWAYS_INLINE uint32_t rtl(uint32_t x, uint32_t n) {
     return shl(x, n) | shr(x, 32 - n);
 }
 
@@ -51,7 +54,7 @@ SHA256_ALWAYS_INLINE uint32_t sha_maj(uint32_t x, uint32_t y, uint32_t z) {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-static inline void sha256_solve_block(const uint8_t block[Sha256_BlockSize],
+SHA256_ALWAYS_INLINE void sha256_solve_block(const uint8_t block[Sha256_BlockSize],
                                       uint32_t hash[Sha256_HashSizeDWord]) {
     alignas(64) uint32_t w[Sha256_BlockSize] = {0};
 
@@ -192,8 +195,8 @@ int sha256_update(sha256_ctx_t *ctx, const void *msg, uint32_t len) {
 }
 
 int sha256_finish(sha256_ctx_t *ctx) {
-    constexpr uint8_t pad_byte = 0x80;
-    constexpr uint32_t size_off = 56;
+    nu_constexpr uint8_t pad_byte = 0x80;
+    nu_constexpr uint32_t size_off = 56;
 
     const uint64_t bitlen = 8ULL * ctx->msglen;
 

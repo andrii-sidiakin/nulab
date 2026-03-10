@@ -6,7 +6,6 @@
 
 #include <limits.h>
 #include <stdalign.h>
-#include <stdckdint.h>
 #include <stddef.h>
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -64,9 +63,13 @@ void nu_mbox_dca_release(nu_dca_mbox_t box, nu_memory_t *mem) {
 NULIB_API_INLINE
 void *nu_mbox_dca_reserve(nu_dca_mbox_t box, nu_memory_t *mem, size_t nelems) {
     size_t nbytes = 0;
+#ifdef NULIB_HAS_CKD_OPS
     if (!nu_expect(!ckd_mul(&nbytes, nelems, box.elem_size))) {
         return NULL;
     }
+#else
+    nbytes = nelems * box.elem_size;
+#endif
     return nu_dca_reserve_bytes(box.pp, mem, box.data_offset, nbytes);
 }
 
@@ -79,9 +82,13 @@ void *nu_mbox_dca_extend(nu_dca_mbox_t box, nu_memory_t *mem, size_t nelems) {
     const size_t len = (*box.pp) ? (*box.pp)->blen / box.elem_size : 0;
 
     size_t newlen = 0;
+#ifdef NULIB_HAS_CKD_OPS
     if (!nu_expect(!ckd_add(&newlen, len, nelems))) {
         return NULL;
     }
+#else
+    newlen = len * nelems;
+#endif
 
     return nu_mbox_dca_reserve(box, mem, newlen);
 }
@@ -89,9 +96,13 @@ void *nu_mbox_dca_extend(nu_dca_mbox_t box, nu_memory_t *mem, size_t nelems) {
 NULIB_API_INLINE
 void *nu_mbox_dca_consume(nu_dca_mbox_t box, nu_memory_t *mem, size_t nelems) {
     size_t nbytes = 0;
+#ifdef NULIB_HAS_CKD_OPS
     if (!nu_expect(!ckd_mul(&nbytes, nelems, box.elem_size))) {
         return NULL;
     }
+#else
+    nbytes = nelems * box.elem_size;
+#endif
     return nu_dca_consume_bytes(box.pp, mem, box.data_offset, nbytes);
 }
 
@@ -125,7 +136,7 @@ void nu_mbox_dca_clean(nu_dca_mbox_t box, nu_memory_t *mem) {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-#define nu_dca_typeof_elem(dca) nu_typeof(nu_dca_data(dca)[0])
+#define nu_dca_typeof_elem(dca) nu_typeof((dca)->mod->elems[0])
 
 #define nu_dca_release(dca) nu_mbox_dca_release(nu_G_mbox_dca(dca), (dca)->mem)
 

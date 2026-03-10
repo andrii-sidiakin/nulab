@@ -14,7 +14,9 @@ target_include_directories(bclib PUBLIC
 )
 
 target_compile_options(bclib PUBLIC
-    -std=c23
+    $<$<C_COMPILER_ID:GNU>:-std=c23>
+    $<$<C_COMPILER_ID:Clang>:-std=c23>
+    $<$<C_COMPILER_ID:MSVC>:/std:clatest>
 
     $<$<COMPILE_LANG_AND_ID:C,Clang>:-Rpass=loop-vectorize>
     #$<$<COMPILE_LANG_AND_ID:C,Clang>:-Rpass-missed=loop-vectorize>

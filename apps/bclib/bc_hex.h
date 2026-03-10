@@ -1,12 +1,14 @@
 #ifndef _BC_HEX_H_INCLUDED_
 #define _BC_HEX_H_INCLUDED_
 
+#include <nulib/preset.h>
+
 #include <stddef.h>
 #include <stdint.h>
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-static constexpr uint8_t BcHexCharMap[256] = {
+static nu_constexpr uint8_t BcHexCharMap[256] = {
     ['0'] = 0x00, ['1'] = 0x01, ['2'] = 0x02, ['3'] = 0x03, ['4'] = 0x04,
     ['5'] = 0x05, ['6'] = 0x06, ['7'] = 0x07, ['8'] = 0x08, ['9'] = 0x09,
     ['a'] = 0x0A, ['b'] = 0x0B, ['c'] = 0x0C, ['d'] = 0x0D, ['e'] = 0x0E,
