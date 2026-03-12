@@ -1,4 +1,4 @@
-#include "tcp_client.h"
+#include "bc_client.h"
 
 #include <nulib/buffer.h>
 #include <nulib/string.h>
@@ -12,164 +12,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-typedef struct {
-    nu_tcp_client_t tcp;
-    uint8_t magic[4];
-    nu_buffer_t sbuf; // send buffer
-    nu_buffer_t rbuf; // recv buffer
-} bc_client_t;
-
-int bc_client_recv_message_header(bc_client_t *cli, bc_message_header_t *hdr) {
-    // printf("waiting for message header...\n");
-
-    size_t nr = nu_tcp_client_recv(&cli->tcp, hdr->magic, 4);
-
-    if (nr != 4 || memcmp(hdr->magic, cli->magic, 4) != 0) {
-        perror("... recv magic");
-        printf("... magic mismatch: got[%02x%02x%02x%02x] "
-               "cli[%02x%02x%02x%02x], tcp.ec=%i, nr=%zu\n",
-               hdr->magic[0], hdr->magic[1], hdr->magic[2], hdr->magic[3],
-               cli->magic[0], cli->magic[1], cli->magic[2], cli->magic[3],
-               cli->tcp.ec, nr);
-        cli->tcp.ec = (nr == 0) ? cli->tcp.ec : -1;
-        return -1;
-    }
-
-    nr = nu_tcp_client_recv(&cli->tcp, (uint8_t *)hdr + 4, sizeof(*hdr) - 4);
-
-    if (nr != sizeof(*hdr) - 4) {
-        perror("... recv header");
-        return -1;
-    }
-
-    // printf("... { magic=[%02x%02x%02x%02x], command=[%s], payload_size=%u, "
-    //        "checksum=[%02x%02x%02x%02x] }\n",
-    //        hdr->magic[0], hdr->magic[1], hdr->magic[2], hdr->magic[3],
-    //        hdr->command, hdr->size, hdr->checksum[0], hdr->checksum[1],
-    //        hdr->checksum[2], hdr->checksum[3]);
-
-    return 0;
-}
-
-int bc_client_recv_version_message(bc_client_t *cli,
-                                   const bc_message_header_t *hdr,
-                                   bc_version_message_payload_t *msg) {
-
-    nu_buffer_reserve(&cli->rbuf, hdr->size);
-
-    uint8_t *const buf = nu_buffer_begin(&cli->rbuf);
-
-    printf("waiting for version_message_payload...\n");
-    size_t nr = nu_tcp_client_recv(&cli->tcp, buf, hdr->size);
-
-    if (nr == hdr->size) {
-        size_t c1 = offsetof(bc_version_message_payload_t, user_agent_size);
-
-        // copy data up to the user_agent_size field
-        memcpy(msg, buf, c1);
-
-        uint32_t ua_sz = (buf + c1)[0]; // TODO: parse compact_size
-
-        msg->user_agent_size = ua_sz;
-        msg->user_agent_data = NULL;
-        msg->start_height = *(int32_t *)(buf + c1 + 1);
-
-        printf("... version: %d\n", msg->version);
-        printf("... time: %ld\n", msg->time);
-        printf("... nonce: %ld\n", msg->nonce);
-        printf("... user_agent_size: %d\n", msg->user_agent_size);
-        printf("... start_height: %d\n", msg->start_height);
-    }
-
-    return nr == hdr->size ? 0 : -1;
-}
-
-int bc_client_connect(bc_client_t *cli, const char *host, const char *port) {
-    int ec = nu_tcp_client_connect(&cli->tcp, host, port);
-    if (ec) {
-        return ec;
-    }
-    // ...
-    return ec;
-}
-
-int bc_handshake(bc_client_t *cli) {
-    bc_version_message_payload_t version_payload = {
-        .version = 70014,
-        .service_flags = 0,
-        .time = time(NULL),
-        .addr_recv = {},
-        .addr_from = {},
-        .nonce = 0,
-        .user_agent_size = 0,
-        .user_agent_data = NULL,
-        .start_height = 0, // 940275,
-    };
-
-    bc_message_header_t version_header = {
-        .magic = {0xf9, 0xbe, 0xb4, 0xd9},
-        .command = "version",
-        .size = 0,
-        .checksum = "",
-    };
-
-    bc_message_header_t verack_header = {
-        .magic = {0xf9, 0xbe, 0xb4, 0xd9},
-        .command = "verack",
-        .size = 0,
-        .checksum = "",
-    };
-
-    memcpy(version_header.magic, cli->magic, 4);
-    memcpy(verack_header.magic, cli->magic, 4);
-
-    bc_hash32_t payload_hash = {0};
-    bc_message_header_t header = {0};
-
-    // make version message
-    nu_buffer_clean(&cli->sbuf);
-    bc_append_version_message_payload(&cli->sbuf, &version_payload);
-    version_payload = (bc_version_message_payload_t){0};
-
-    const uint32_t payload_size = nu_buffer_size(&cli->sbuf);
-    hash256_digest(nu_buffer_data(&cli->sbuf), payload_size, payload_hash.data);
-    version_header.size = payload_size;
-    memcpy(version_header.checksum, payload_hash.data, 4);
-
-    // send version message
-
-    nu_tcp_client_send(&cli->tcp, &version_header, sizeof(version_header));
-    nu_tcp_client_send(&cli->tcp, nu_buffer_data(&cli->sbuf),
-                       nu_buffer_size(&cli->sbuf));
-
-    // recv version message
-
-    bc_client_recv_message_header(cli, &header);
-    if (strcmp((const char *)header.command, "version") != 0) {
-        return -1;
-    }
-    bc_client_recv_version_message(cli, &header, &version_payload);
-    // TODO: verify version_payload
-
-    // recv verack message
-    bc_client_recv_message_header(cli, &header);
-    if (strcmp((const char *)header.command, "verack") != 0) {
-        return -1;
-    }
-
-    // make/send verack
-    hash256_digest("", 0, payload_hash.data);
-    memcpy(verack_header.checksum, payload_hash.data, 4);
-    nu_tcp_client_send(&cli->tcp, &verack_header, sizeof(verack_header));
-
-    return cli->tcp.ec;
-}
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 typedef struct {
     int argc;
@@ -198,6 +40,94 @@ static const char TestNetPort[] = "18333";
 static const char TestNet4Port[] = "48333";
 // static const char RegTestPort[] = "18334";
 
+int on_msg(void *ctx, const bc_message_header_t *hdr, const uint8_t *data);
+int on_inv(void *ctx, const uint8_t *data, uint32_t size);
+
+int on_msg(void *ctx, const bc_message_header_t *hdr, const uint8_t *data) {
+    const char *cmd = (const char *)hdr->command;
+    const size_t cmd_max = sizeof(hdr->command);
+
+    bc_client_t *const cli = ctx;
+
+    if (memcmp(hdr->magic, cli->magic, sizeof(cli->magic)) != 0) {
+        fprintf(stderr, ":e: magic mismatch\n");
+        return 1;
+    }
+
+    uint8_t hash[BcHashSize] = {0};
+    hash256_digest(data, hdr->size, hash);
+    if (memcmp(hdr->checksum, hash, 4) != 0) {
+        fprintf(stderr, ":e: checksum mismatch\n");
+        return 1;
+    }
+
+    if (strncmp(cmd, "version", cmd_max) == 0) {
+        const bc_version_message_payload_t *ver_data =
+            (const bc_version_message_payload_t *)data;
+        if (bc_client_verify_version(cli, ver_data) == 0) {
+            fprintf(stdout, ":d: on 'version' do 'verack'\n");
+            bc_client_send_verack(cli);
+        }
+        return 0;
+    }
+
+    if (strncmp(cmd, "verack", cmd_max) == 0) {
+        fprintf(stdout, ":d: on 'verack' do NOTHING\n");
+        return 0;
+    }
+
+    if (strncmp(cmd, "ping", cmd_max) == 0) {
+        fprintf(stdout, ":d: on 'ping' do 'pong'\n");
+        bc_client_send_pong(cli);
+        return 0;
+    }
+
+    if (strncmp(cmd, "inv", cmd_max) == 0) {
+        fprintf(stdout, ":d: on 'inv'\n");
+        return on_inv(ctx, data, hdr->size);
+    }
+
+    if (strncmp(cmd, "sendcmpct", cmd_max) == 0) {
+        fprintf(stdout, ":d: on 'sendcmpct' do NOTHING\n");
+        fprintf(stdout, "... [%u][%lu]\n", *data, *(uint64_t *)(data + 1));
+        return 0;
+    }
+
+    if (strncmp(cmd, "feefilter", cmd_max) == 0) {
+        fprintf(stdout, ":d: on 'feefilter' do NOTHING\n");
+        return 0;
+    }
+
+    fprintf(stdout,
+            ":e: unknown header { magic=[%02x%02x%02x%02x], command=[%.12s], "
+            "payload_size=%u, "
+            "checksum=[%02x%02x%02x%02x] }\n",
+            hdr->magic[0], hdr->magic[1], hdr->magic[2], hdr->magic[3],
+            hdr->command, hdr->size, hdr->checksum[0], hdr->checksum[1],
+            hdr->checksum[2], hdr->checksum[3]);
+
+    return 1;
+}
+
+int on_inv(void *ctx, const uint8_t *data, uint32_t size) {
+    if (nu_expect(size > 0 && data != NULL)) {
+        return 1;
+    }
+
+    uint8_t nids = *(data);
+
+    for (uint32_t i = 0; i < nids; ++i) {
+        const uint8_t *const inv = data + (i * 36) + 1;
+        uint32_t tid = *(uint32_t *)(inv);
+        if (tid != 1) {
+            printf("... inv: {tid=0x%0x}, ...\n", tid);
+            bc_fprint_field_data(stdout, "inv_hash", inv + 4, 32);
+        }
+    }
+
+    return 0;
+}
+
 int main(int argc, char *argv[]) {
     //
     // const char *Port = MainNetPort;
@@ -222,6 +152,8 @@ int main(int argc, char *argv[]) {
         .tcp = {0},
         .sbuf = nu_buffer_create(),
         .rbuf = nu_buffer_create(),
+        .on_msg_ctx = &cli,
+        .on_msg = on_msg,
     };
 
     memcpy(cli.magic, Magic, 4);
@@ -231,11 +163,27 @@ int main(int argc, char *argv[]) {
         goto done;
     }
 
-    printf("handshake...\n");
-    if (bc_handshake(&cli)) {
-        goto done;
+    int num_fails = 0;
+    bc_message_header_t hdr = {0};
+    while (cli.tcp.ec == 0) {
+        if (bc_client_next_message(&cli)) {
+            if (cli.status == BcClient_TcpError) {
+                perror("read message");
+                break;
+            }
+            num_fails += 1;
+        }
+        else {
+            num_fails = 0;
+        }
+
+        if (num_fails > 10) {
+            printf("failed to read next message %d times.\n", num_fails);
+            break;
+        }
     }
 
+#if 0
     bc_hash32_t hash = {0};
     bc_message_header_t header = {0};
 
@@ -302,6 +250,7 @@ int main(int argc, char *argv[]) {
                header.magic[3], header.command, header.size, header.checksum[0],
                header.checksum[1], header.checksum[2], header.checksum[3]);
     }
+#endif
 
 done:
     if (cli.tcp.ec) {
@@ -309,10 +258,7 @@ done:
     }
 
     printf("disconnecting...\n");
-    nu_tcp_client_disconnect(&cli.tcp);
-
-    nu_buffer_release(&cli.sbuf);
-    nu_buffer_release(&cli.rbuf);
+    bc_client_disconnect(&cli);
 
     printf("done.\n");
     return 0;

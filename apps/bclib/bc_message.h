@@ -34,7 +34,8 @@ typedef struct {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-int bc_append_message_header(nu_buffer_t *buf, const bc_message_header_t *ptr) {
+static int bc_append_message_header(nu_buffer_t *buf,
+                                    const bc_message_header_t *ptr) {
     if (nu_buffer_extend(buf, sizeof(*ptr))) {
         bc_append_bytes(buf, ptr->magic, sizeof(ptr->magic));
         bc_append_bytes(buf, ptr->command, sizeof(ptr->command));
@@ -45,7 +46,7 @@ int bc_append_message_header(nu_buffer_t *buf, const bc_message_header_t *ptr) {
     return -1;
 }
 
-int bc_append_net_addr(nu_buffer_t *buf, const bc_net_addr_t *ptr) {
+static int bc_append_net_addr(nu_buffer_t *buf, const bc_net_addr_t *ptr) {
     if (nu_buffer_extend(buf, sizeof(*ptr))) {
         bc_append_u64(buf, ptr->services);
         bc_append_bytes(buf, ptr->ip, sizeof(ptr->ip));
@@ -55,8 +56,9 @@ int bc_append_net_addr(nu_buffer_t *buf, const bc_net_addr_t *ptr) {
     return -1;
 }
 
-int bc_append_version_message_payload(nu_buffer_t *buf,
-                                      const bc_version_message_payload_t *ptr) {
+static int
+bc_append_version_message_payload(nu_buffer_t *buf,
+                                  const bc_version_message_payload_t *ptr) {
     const uint32_t approx_size = sizeof(*ptr) + ptr->user_agent_size;
 
     if (nu_buffer_extend(buf, approx_size)) {
