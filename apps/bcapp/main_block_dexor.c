@@ -138,10 +138,10 @@ int btc_read_tx_header(btc_file_t *file, btc_tx_header_t *h) {
         return ec;
     }
 
-    // assuming it was tx_input_count
+    // assuming it is tx_input_count
     int tx_in_count = tx_input_count_or_flag_byte0;
 
-    if (tx_in_count == 0) { // but not, it was flag_byte0
+    if (tx_in_count == 0) { // no, it's flag_byte0
         uint8_t flag_byte1 = 0;
         ec = btc_file_read(file, &flag_byte1, 1);
         if (ec) {

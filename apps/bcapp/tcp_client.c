@@ -1,7 +1,7 @@
 #include "tcp_client.h"
 
 #define _POSIX_C_SOURCE 200809L // Or 200112L
-//#define _GNU_SOURCE // Often needed on Linux for full network API access
+// #define _GNU_SOURCE // Often needed on Linux for full network API access
 
 #include <errno.h>
 #include <stdio.h>
@@ -39,8 +39,11 @@ int nu_tcp_client_connect(nu_tcp_client_t *cli, const char *node,
             continue;
         }
         cli->sd = sd;
+        ec = 0;
         break;
     }
+
+    cli->ec = ec;
 
     return ec;
 }

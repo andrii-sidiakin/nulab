@@ -14,8 +14,8 @@
 
 typedef nu_G_dca(bc_tx_view_t) tx_view_dca_t;
 
-static int tx_view_dca_append(tx_view_dca_t *txns, const bc_tx_view_t *tx) {
-    bc_tx_view_t *const out = nu_dca_consume(txns, 1);
+static int tx_view_dca_append(tx_view_dca_t *txs, const bc_tx_view_t *tx) {
+    bc_tx_view_t *const out = nu_dca_consume(txs, 1);
     if (out) {
         *out = *tx;
     }

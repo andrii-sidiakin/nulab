@@ -21,8 +21,13 @@ target_compile_options(bclib PUBLIC
     $<$<COMPILE_LANG_AND_ID:C,Clang>:-Rpass=loop-vectorize>
     #$<$<COMPILE_LANG_AND_ID:C,Clang>:-Rpass-missed=loop-vectorize>
     #$<$<COMPILE_LANG_AND_ID:C,Clang>:-Rpass-analysis=loop-vectorize>
+
     $<$<CONFIG:Release>:-march=native>
     $<$<CONFIG:Release>:-ffast-math>
+    $<$<CONFIG:Release>:-funroll-loops>
+)
+target_link_options(bclib PUBLIC
+    $<$<CONFIG:Release>:-flto>
 )
 
 target_link_libraries(bclib PUBLIC NuLab::NuLib)

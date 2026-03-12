@@ -54,6 +54,17 @@
 #endif
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// nu_alignas
+
+#ifdef NULIB_SUPPORTS_C23
+#define nu_alignas(x) alignas(x)
+#elif defined(NULIB_SUPPORTS_C11)
+#define nu_alignas(x) _Alignas(x)
+#else
+#define nu_alignas(x) __attribute__((__aligned__(x)))
+#endif
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // nu_typeof
 
 #ifdef NULIB_SUPPORTS_C23
@@ -94,7 +105,7 @@
 #if __has_include(<stdckdint.h>)
 #define NULIB_HAS_CKD_OPS
 #include <stdckdint.h>
-#else 
+#else
 // TODO: provide ckd ops
 #endif
 

@@ -54,9 +54,10 @@ SHA256_ALWAYS_INLINE uint32_t sha_maj(uint32_t x, uint32_t y, uint32_t z) {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-SHA256_ALWAYS_INLINE void sha256_solve_block(const uint8_t block[Sha256_BlockSize],
-                                      uint32_t hash[Sha256_HashSizeDWord]) {
-    alignas(64) uint32_t w[Sha256_BlockSize] = {0};
+SHA256_ALWAYS_INLINE void
+sha256_solve_block(const uint8_t block[Sha256_BlockSize],
+                   uint32_t hash[Sha256_HashSizeDWord]) {
+    nu_alignas(64) uint32_t w[Sha256_BlockSize] = {0};
 
     const uint8_t *msg = block;
     for (unsigned t = 0, q = 0; t < 16; t += 1, q += 4) {
@@ -104,15 +105,21 @@ SHA256_ALWAYS_INLINE void sha256_solve_block(const uint8_t block[Sha256_BlockSiz
     hash[7] += h;
 }
 
-SHA256_ALWAYS_INLINE int sha256_submit(sha256_ctx_t *ctx) {
+SHA256_ALWAYS_INLINE void sha256_submit(sha256_ctx_t *ctx) {
     sha256_solve_block(ctx->block, ctx->hash);
     ctx->index = 0;
-    return 0;
 }
 
 SHA256_ALWAYS_INLINE void sha256_fill_zeros(sha256_ctx_t *ctx) {
     uint32_t n = Sha256_BlockSize - ctx->index;
     memset(ctx->block + ctx->index, 0, n);
+}
+
+SHA256_ALWAYS_INLINE void
+sha256_push_block(sha256_ctx_t *ctx, const uint8_t block[Sha256_BlockSize]) {
+    assert(ctx->index == 0);
+    memcpy(ctx->block, block, Sha256_BlockSize);
+    sha256_submit(ctx);
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -146,50 +153,40 @@ int sha256_update(sha256_ctx_t *ctx, const void *msg, uint32_t len) {
     if (len == 0) {
         return 0;
     }
+
     if (msglen < ctx->msglen) {
         return EOVERFLOW;
     }
-
     ctx->msglen = msglen;
 
-#if 0
-    assert(ctx->index < Sha256_BlockSize);
+    uint32_t i = 0;
 
-    const size_t pad = Sha256_BlockSize - ctx->index;
-    const size_t num = pad < len ? pad : len;
-
-    if (num) {
-        memcpy(ctx->block + ctx->index, ptr, num);
-        len -= num;
-        ptr += num;
-    }
-
-    if (num != pad) {
-        assert(len == 0);
-        ctx->index += num;
-    }
-    else {
-        sha256_submit(ctx);
-
-        assert(ctx->index == 0);
-        for (; len >= Sha256_BlockSize; len -= Sha256_BlockSize) {
-            memcpy(ctx->block, ptr, Sha256_BlockSize);
-            ptr += Sha256_BlockSize;
-            sha256_submit(ctx);
+    // complete block
+    if (ctx->index) {
+        for (; i < len; ++i) {
+            ctx->block[ctx->index++] = *ptr++;
+            if (ctx->index == Sha256_BlockSize) {
+                sha256_submit(ctx);
+                ctx->index = 0;
+                len = len - 1 - i;
+            }
         }
+        assert();
     }
 
-#else
+    for (; len >= Sha256_BlockSize; len -= Sha256_BlockSize) {
+        sha256_push_block(ctx, ptr);
+        ptr += Sha256_BlockSize;
+    }
 
-    for (uint32_t i = 0; i < len; ++i) {
+    // complete block
+    for (; i < len; ++i) {
         ctx->block[ctx->index++] = *ptr++;
         if (ctx->index == Sha256_BlockSize) {
             sha256_submit(ctx);
             ctx->index = 0;
         }
     }
-
-#endif
 
     return 0;
 }
@@ -228,7 +225,9 @@ int sha256_finish(sha256_ctx_t *ctx) {
     ctx->index = 64;
 #endif
 
-    return sha256_submit(ctx);
+    sha256_submit(ctx);
+
+    return 0;
 }
 
 int sha256_result(const sha256_ctx_t *ctx, uint8_t buf[Sha256_HashSize]) {
