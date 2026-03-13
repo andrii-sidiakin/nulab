@@ -74,7 +74,7 @@ NULIB_MaybeUnused static inline int _nulib_stmt_check_maybe_unsused(int x) {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 static inline void
-_nulib_stmt_check_failure_print_report(nulib_stmt_check_failure_report_t r) {
+_nulib_stmt_check_failure_report_print(nulib_stmt_check_failure_report_t r) {
 #ifdef NULIB_ASSERT_VERBOSE
     fprintf(stderr, "%s: [ %s ] in '%s', at '%s:%i'\n", r.what, r.stmt, r.func,
             r.file, r.line);
@@ -88,16 +88,16 @@ _nulib_stmt_check_failure_print_report(nulib_stmt_check_failure_report_t r) {
 }
 
 NULIB_NoReturn static inline void
-_nulib_stmt_check_failure_print_report_and_exit(
+_nulib_stmt_check_failure_report_print_and_exit(
     nulib_stmt_check_failure_report_t r) {
-    _nulib_stmt_check_failure_print_report(r);
+    _nulib_stmt_check_failure_report_print(r);
     exit(EXIT_FAILURE);
 }
 
 NULIB_NoReturn static inline void
-_nulib_stmt_check_failure_print_report_and_abort(
+_nulib_stmt_check_failure_report_print_and_abort(
     nulib_stmt_check_failure_report_t r) {
-    _nulib_stmt_check_failure_print_report(r);
+    _nulib_stmt_check_failure_report_print(r);
     abort();
 }
 
